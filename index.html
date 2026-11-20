@@ -274,7 +274,7 @@ function drawDeathWorld(t){const k=Math.min(1,D.t);
 function drawDeathScreen(){if(D.t<1.4)return;const a=Math.min(1,(D.t-1.4)*1.5),txt='СИСТЕМА ВЗЛОМАНА',y=H*.42;
  ctx.fillStyle=`rgba(10,0,20,${a*.45})`;ctx.fillRect(0,0,W,H);ctx.globalAlpha=a;ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='bold '+Math.min(72,W/12)+'px Consolas';
  const j=Math.random()<.25?rnd(14):rnd(3);ctx.fillStyle='#ff2a6d';ctx.fillText(txt,W/2+6+j,y);ctx.fillStyle='#00f0ff';ctx.fillText(txt,W/2-6-j,y);ctx.fillStyle='#fff';ctx.fillText(txt,W/2,y);
- for(let i=0;i<5;i++)if(Math.random()<.5){const sy=y-40+Math.random()*80,sh=4+Math.random()*10;ctx.drawImage(cv,0,sy,W,sh,rnd(30),sy,W,sh)}
+ for(let i=0;i<5;i++)if(Math.random()<.5){const sh=4+Math.random()*10,sy=Math.max(0,Math.min(H-sh,y-40+Math.random()*80));ctx.drawImage(cv,0,sy,W,sh,rnd(30),sy,W,sh)}
  ctx.font='18px Consolas';ctx.fillStyle='#ff2bd6';ctx.fillText('> критическая ошибка ядра · '+fmt(T)+' · уровень '+lvl,W/2,y+60);ctx.globalAlpha=1}
 function startVictory(){if(state==='victory')return;state='victory';D={t:0};shake=18;flash={c:'#00f0ff',l:.8,ml:.8};banners=[];ebul=[];
  for(const e of enemies){e.dead=true;burst(e.x,e.y,e.c,14,300)}enemies=[];
@@ -310,7 +310,7 @@ function pickLv(k,id){if(k==='heal')P.hp=Math.min(P.max,P.hp+50);else addItem(k,
 function togglePause(){if(state==='play'){state='pause';ui.innerHTML=`<div class="panel"><h2>ПАУЗА</h2>${buildTable()}<button onclick="togglePause()">ПРОДОЛЖИТЬ</button></div>`}else if(state==='pause'){state='play';ui.innerHTML='';last=performance.now()}}
 function buildTable(){return `<table>${P.weps.map(w=>`<tr><td style="color:${w.evo?'#ffd700':WP[w.k].c}">${w.evo?WP[w.k].evo.ic+' '+WP[w.k].evo.n:WP[w.k].ic+' '+WP[w.k].n}</td><td>ур. ${w.lv}${w.evo?' ★':''}</td><td>${Math.round(w.dealt)} урона</td></tr>`).join('')}
  ${Object.keys(P.pas).map(k=>`<tr><td style="color:${PS[k].c}">${PS[k].ic} ${PS[k].n}</td><td>ур. ${P.pas[k]}</td><td>${PS[k].d}</td></tr>`).join('')}</table>`}
-function endGame(win){state='over';const sc=Math.floor(T)*10+kills;if(sc>best)localStorage.setItem('neonsurv_best',sc);
+function endGame(win){state='over';const best=+localStorage.getItem('neonsurv_best')||0,sc=Math.floor(T)*10+kills;if(sc>best)localStorage.setItem('neonsurv_best',sc);
  ui.innerHTML=`<div class="panel"><h1 style="font-size:34px">${win?'СЕТЬ ОСВОБОЖДЕНА':'СИСТЕМА ВЗЛОМАНА'}</h1><p>Время ${fmt(T)} · Уровень ${lvl} · Убито ${kills} · Счёт ${sc} ${sc>best?'<b style="color:#ffe600">НОВЫЙ РЕКОРД!</b>':'(рекорд '+best+')'}</p>${buildTable()}<button onclick="menu()">В ГЛАВНОЕ МЕНЮ</button></div>`}
 
 // ---------- render ----------
