@@ -57,22 +57,22 @@ const WP={
  blaster:{n:'Плазма-бластер',ic:'✦',c:'#00f0ff',d:'Автоогонь по ближайшему врагу.',up:['','+1 снаряд','+40% урона','+1 снаряд','Пробивает 3 врагов'],
   cd:l=>.85-.07*l,fire(w){const t=nearest(P.x,P.y,700);if(!t)return;const n=1+Math.floor(w.lv/2)+S.proj,a=Math.atan2(t.y-P.y,t.x-P.x);
    for(let i=0;i<n;i++)shoot(P.x,P.y,a+(i-(n-1)/2)*.13,650,{r:5,dmg:10+(w.lv>=3?6:0)+2*w.lv,pierce:w.lv>=5?3:1,life:1.3,w,kind:'bolt'})}},
- orbit:{n:'Орбитальные дроны',ic:'◎',c:'#ff2bd6',d:'Дроны вращаются вокруг тебя и режут врагов.',up:['','+1 дрон','+радиус и скорость','+1 дрон','+2 дрона'],
+ orbit:{n:'Орбитальные дроны',ic:'◎',c:'#5ce1ff',d:'Дроны вращаются вокруг тебя и режут врагов.',up:['','+1 дрон','+радиус и скорость','+1 дрон','+2 дрона'],
   tick(w,dt){const n=[0,2,3,3,4,6][w.lv]+S.proj,R=(70+(w.lv>=3?20:0))*S.area,dmg=7+3*w.lv;w.a=(w.a||0)+dt*(3+(w.lv>=3?1.2:0));w.pos=[];
    for(let i=0;i<n;i++){const a=w.a+i/n*TAU,x=P.x+Math.cos(a)*R,y=P.y+Math.sin(a)*R;w.pos.push([x,y]);
     for(const e of enemies){if(e.dead)continue;const dx=e.x-x,dy=e.y-y;if(dx*dx+dy*dy<(e.r+11*S.area)**2&&T-(e.ho||-9)>.35){e.ho=T;hit(e,dmg,Math.atan2(dy,dx),w)}}
     if(Math.random()<.5)part(x,y,rnd(20),rnd(20),.3,w.c,2)}}},
- emp:{n:'ЭМИ-импульс',ic:'◉',c:'#3cff9e',d:'Волна вокруг тебя отбрасывает врагов.',up:['','+радиус','+50% урона','-перезарядка','+радиус, оглушение'],
+ emp:{n:'ЭМИ-импульс',ic:'◉',c:'#70ffd9',d:'Волна вокруг тебя отбрасывает врагов.',up:['','+радиус','+50% урона','-перезарядка','+радиус, оглушение'],
   cd:l=>3.2-.2*l-(l>=4?.5:0),fire(w){const R=(110+(w.lv>=2?30:0)+(w.lv>=5?40:0))*S.area,dmg=10+(w.lv>=3?8:0)+3*w.lv;
    rings.push({x:P.x,y:P.y,r:0,R,l:.45,ml:.45,c:w.c,w:10});rings.push({x:P.x,y:P.y,r:0,R:R*.7,l:.35,ml:.35,c:'#ffffff',w:3});
    for(const e of enemies){const dx=e.x-P.x,dy=e.y-P.y;if(!e.dead&&dx*dx+dy*dy<(R+e.r)**2){hit(e,dmg,Math.atan2(dy,dx),w,3.5);if(w.lv>=5)e.stun=.8}}}},
- rocket:{n:'Рой ракет',ic:'➶',c:'#ff8c00',d:'Самонаводящиеся ракеты со взрывом.',up:['','+1 ракета','+радиус взрыва','+1 ракета','+2 ракеты, +урон'],
+ rocket:{n:'Рой ракет',ic:'➶',c:'#4da6ff',d:'Самонаводящиеся ракеты со взрывом.',up:['','+1 ракета','+радиус взрыва','+1 ракета','+2 ракеты, +урон'],
   cd:l=>2.3-.15*l,fire(w){const n=1+(w.lv>=2?1:0)+(w.lv>=4?1:0)+(w.lv>=5?2:0)+S.proj;
    for(let i=0;i<n;i++)shoot(P.x,P.y,Math.random()*TAU,260,{r:6,dmg:20+(w.lv>=5?12:0)+5*w.lv,life:3,w,kind:'rocket',homing:1,explode:(55+(w.lv>=3?25:0))*S.area})}},
  mine:{n:'Нано-мины',ic:'✸',c:'#ffe600',d:'Мины на месте, взрываются при контакте.',up:['','+1 мина','+радиус','+1 мина','+80% урона'],
   cd:l=>1.6-.1*l,fire(w){const n=1+(w.lv>=2?1:0)+(w.lv>=4?1:0)+S.proj;
    for(let i=0;i<n;i++)mines.push({x:P.x+rnd(40),y:P.y+rnd(40),arm:.5,life:6,R:(75+(w.lv>=3?30:0))*S.area,dmg:(30+8*w.lv)*(w.lv>=5?1.8:1),w})}},
- disc:{n:'Рикошет-диск',ic:'◈',c:'#c56cff',d:'Диск отскакивает от краёв экрана.',up:['','+1 диск','+время жизни','+1 диск','+скорость и урон'],
+ disc:{n:'Рикошет-диск',ic:'◈',c:'#80ffff',d:'Диск отскакивает от краёв экрана.',up:['','+1 диск','+время жизни','+1 диск','+скорость и урон'],
   cd:l=>3.2-.2*l,fire(w){const n=1+(w.lv>=2?1:0)+(w.lv>=4?1:0)+S.proj;
    for(let i=0;i<n;i++)shoot(P.x,P.y,Math.random()*TAU,w.lv>=5?520:400,{r:11*S.area,dmg:10+(w.lv>=5?10:0)+3*w.lv,pierce:1e9,rehit:.4,life:(3+(w.lv>=3?2:0))*S.dur,w,kind:'disc',bounce:1})}}
 };
@@ -88,12 +88,12 @@ const PS={
  crit:{n:'Нейрочип',ic:'✪',c:'#ffd700',d:'+6% шанс крита (x2.5)',max:5}
 };
 const EN={
- drone:{r:10,hp:8,spd:72,dmg:8,c:'#ff2bd6',xp:1,n:6},
- runner:{r:8,hp:6,spd:135,dmg:6,c:'#39ff14',xp:1,n:3},
- brute:{r:19,hp:45,spd:46,dmg:15,c:'#b967ff',xp:5,n:4},
- spitter:{r:12,hp:22,spd:58,dmg:8,c:'#ffe600',xp:3,n:4,shoot:2.2},
- elite:{r:24,hp:320,spd:62,dmg:18,c:'#ff8c00',xp:25,n:8,chest:1},
- boss:{r:52,hp:3500,spd:52,dmg:30,c:'#ff2a6d',xp:100,n:10,shoot:.7,chest:3,boss:1}
+ drone:{r:10,hp:8,spd:72,dmg:8,c:'#ff2a6d',xp:1,n:6},
+ runner:{r:8,hp:6,spd:135,dmg:6,c:'#ff6b35',xp:1,n:3},
+ brute:{r:19,hp:45,spd:46,dmg:15,c:'#c9184a',xp:5,n:4},
+ spitter:{r:12,hp:22,spd:58,dmg:8,c:'#ff9f1c',xp:3,n:4,shoot:2.2},
+ elite:{r:24,hp:320,spd:62,dmg:18,c:'#ff4d00',xp:25,n:8,chest:1},
+ boss:{r:52,hp:3500,spd:52,dmg:30,c:'#ff003c',xp:100,n:10,shoot:.7,chest:3,boss:1}
 };
 
 // ---------- state ----------
@@ -313,16 +313,17 @@ function draw(now){
   for(const p of parts){ctx.globalAlpha=Math.min(1,p.l/p.ml*1.5);ctx.fillStyle=p.c;ctx.fillRect(p.x-p.s/2,p.y-p.s/2,p.s,p.s)}ctx.globalAlpha=1;
   // enemies
   for(const e of enemies){if(Math.abs(e.x-cx)>W/2+60||Math.abs(e.y-cy)>H/2+60)continue;
-   glow(e.x,e.y,e.r*2.6,e.c,e.boss?.9:.55);
-   ctx.globalCompositeOperation='source-over';ctx.fillStyle=e.flash>0?'#ffffff':'rgba(10,0,25,.85)';poly(e.x,e.y,e.r,e.n,e.rot);ctx.fill();
-   ctx.globalCompositeOperation='lighter';ctx.strokeStyle=e.flash>0?'#fff':e.c;ctx.lineWidth=e.boss?4:2.5;poly(e.x,e.y,e.r,e.n,e.rot);ctx.stroke();
-   ctx.fillStyle=e.c;ctx.beginPath();ctx.arc(e.x,e.y,e.r*.25,0,TAU);ctx.fill();
+   glow(e.x,e.y,e.r*1.8,e.c,e.boss?.75:.28);
+   ctx.globalCompositeOperation='source-over';ctx.fillStyle=e.flash>0?'#ffffff':'rgba(18,2,10,.92)';poly(e.x,e.y,e.r,e.n,e.rot);ctx.fill();
+   ctx.strokeStyle=e.flash>0?'#fff':e.c;ctx.lineWidth=e.boss?4:2.2;poly(e.x,e.y,e.r,e.n,e.rot);ctx.stroke();
+   ctx.fillStyle=e.c;ctx.beginPath();ctx.arc(e.x,e.y,e.r*.22,0,TAU);ctx.fill();
    if(e.boss||e.chest){ctx.strokeStyle=hexA(e.c,.6);poly(e.x,e.y,e.r*1.35,e.n,-e.rot*1.5);ctx.stroke()}
    if(e.hp<e.max&&(e.boss||e.chest||e.t==='brute')){ctx.fillStyle=hexA(e.c,.3);ctx.fillRect(e.x-e.r,e.y-e.r-10,e.r*2,4);ctx.fillStyle=e.c;ctx.fillRect(e.x-e.r,e.y-e.r-10,e.r*2*e.hp/e.max,4)}}
-  for(const b of ebul){glow(b.x,b.y,14,b.c,.9);ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(b.x,b.y,3,0,TAU);ctx.fill()}
+  ctx.globalCompositeOperation='lighter';
+  for(const b of ebul){glow(b.x,b.y,16,'#ff1e00',.9);ctx.globalCompositeOperation='source-over';ctx.fillStyle='#ff1e00';ctx.beginPath();ctx.arc(b.x,b.y,5,0,TAU);ctx.fill();ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(b.x,b.y,2.5,0,TAU);ctx.fill();ctx.globalCompositeOperation='lighter'}
   // projectiles
   for(const b of proj){if(b.kind==='bolt'){const a=Math.atan2(b.vy,b.vx);glow(b.x,b.y,16,b.c,.9);ctx.strokeStyle=b.c;ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(b.x,b.y);ctx.lineTo(b.x-Math.cos(a)*18,b.y-Math.sin(a)*18);ctx.stroke();ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke()}
-   else if(b.kind==='rocket'){glow(b.x,b.y,20,'#ff8c00',1);ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(b.x,b.y,3.5,0,TAU);ctx.fill()}
+   else if(b.kind==='rocket'){glow(b.x,b.y,20,'#4da6ff',1);ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(b.x,b.y,3.5,0,TAU);ctx.fill()}
    else if(b.kind==='disc'){glow(b.x,b.y,b.r*2.6,b.c,.8);ctx.strokeStyle=b.c;ctx.lineWidth=3;poly(b.x,b.y,b.r,6,t*12);ctx.stroke();ctx.strokeStyle='#fff';ctx.lineWidth=1;poly(b.x,b.y,b.r*.5,6,-t*12);ctx.stroke()}}
   // orbit drones
   for(const w of P.weps)if(w.pos)for(const [x,y] of w.pos){glow(x,y,26,WP.orbit.c,.9);ctx.fillStyle='#fff';poly(x,y,6,4,t*8);ctx.fill();ctx.strokeStyle=WP.orbit.c;ctx.lineWidth=2;poly(x,y,10,4,-t*5);ctx.stroke()}
