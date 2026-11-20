@@ -55,37 +55,47 @@ const fmt=t=>String(Math.floor(t/60)).padStart(2,'0')+':'+String(Math.floor(t%60
 // ---------- data ----------
 const WP={
  blaster:{n:'Плазма-бластер',ic:'✦',c:'#00f0ff',d:'Автоогонь по ближайшему врагу.',up:['','+1 снаряд','+40% урона','+1 снаряд','Пробивает 3 врагов'],
-  cd:l=>.85-.07*l,fire(w){const t=nearest(P.x,P.y,700);if(!t)return;const n=1+Math.floor(w.lv/2)+S.proj,a=Math.atan2(t.y-P.y,t.x-P.x);
-   for(let i=0;i<n;i++)shoot(P.x,P.y,a+(i-(n-1)/2)*.13,650,{r:5,dmg:10+(w.lv>=3?6:0)+2*w.lv,pierce:w.lv>=5?3:1,life:1.3,w,kind:'bolt'})}},
+  evo:{req:'cpu',n:'Гипер-бластер',ic:'✺',d:'Шквальный огонь пробивающими импульсами'},
+  cd:l=>.85-.07*Math.min(5,l),fire(w){const t=nearest(P.x,P.y,700);if(!t)return;const ov=w.lv>5?Math.pow(1.15,w.lv-5):1;const n=1+Math.floor(Math.min(5,w.lv)/2)+S.proj+(w.evo?2:0),a=Math.atan2(t.y-P.y,t.x-P.x);
+   for(let i=0;i<n;i++)shoot(P.x,P.y,a+(i-(n-1)/2)*.11,w.evo?820:650,{r:w.evo?6:5,dmg:(10+(w.lv>=3?6:0)+2*Math.min(5,w.lv))*ov*(w.evo?1.5:1),pierce:w.evo?8:(w.lv>=5?3:1),life:1.3,w,kind:'bolt'})}},
  orbit:{n:'Орбитальные дроны',ic:'◎',c:'#5ce1ff',d:'Дроны вращаются вокруг тебя и режут врагов.',up:['','+1 дрон','+радиус и скорость','+1 дрон','+2 дрона'],
-  tick(w,dt){const n=[0,2,3,3,4,6][w.lv]+S.proj,R=(70+(w.lv>=3?20:0))*S.area,dmg=7+3*w.lv;w.a=(w.a||0)+dt*(3+(w.lv>=3?1.2:0));w.pos=[];
+  evo:{req:'dup',n:'Боевые турели',ic:'❂',d:'Дроны стреляют лазерами во врагов'},
+  tick(w,dt){const ov=w.lv>5?Math.pow(1.15,w.lv-5):1;const n=[0,2,3,3,4,6][Math.min(5,w.lv)]+S.proj+(w.evo?2:0),R=(70+(w.lv>=3?20:0))*S.area,dmg=(7+3*Math.min(5,w.lv))*ov;w.a=(w.a||0)+dt*(3+(w.lv>=3?1.2:0));w.pos=[];
+   if(w.evo){w.st=(w.st||0)-dt}
    for(let i=0;i<n;i++){const a=w.a+i/n*TAU,x=P.x+Math.cos(a)*R,y=P.y+Math.sin(a)*R;w.pos.push([x,y]);
     for(const e of enemies){if(e.dead)continue;const dx=e.x-x,dy=e.y-y;if(dx*dx+dy*dy<(e.r+11*S.area)**2&&T-(e.ho||-9)>.35){e.ho=T;hit(e,dmg,Math.atan2(dy,dx),w)}}
-    if(Math.random()<.5)part(x,y,rnd(20),rnd(20),.3,w.c,2)}}},
+    if(w.evo&&w.st<=0){const t=nearest(x,y,380);if(t)shoot(x,y,Math.atan2(t.y-y,t.x-x),700,{r:4,dmg:dmg*1.2,pierce:2,life:.7,w,kind:'bolt'})}
+    if(Math.random()<.5)part(x,y,rnd(20),rnd(20),.3,w.c,2)}
+   if(w.evo&&w.st<=0)w.st=.6*S.cd}},
  emp:{n:'ЭМИ-импульс',ic:'◉',c:'#70ffd9',d:'Волна вокруг тебя отбрасывает врагов.',up:['','+радиус','+50% урона','-перезарядка','+радиус, оглушение'],
-  cd:l=>3.2-.2*l-(l>=4?.5:0),fire(w){const R=(110+(w.lv>=2?30:0)+(w.lv>=5?40:0))*S.area,dmg=10+(w.lv>=3?8:0)+3*w.lv;
+  evo:{req:'nano',n:'Плазменная буря',ic:'⚛',d:'Огромная волна, лечит при попадании'},
+  cd:l=>3.2-.2*Math.min(5,l)-(l>=4?.5:0)-(l>5?.3:0),fire(w){const ov=w.lv>5?Math.pow(1.15,w.lv-5):1;const R=(110+(w.lv>=2?30:0)+(w.lv>=5?40:0)+(w.evo?60:0))*S.area,dmg=(10+(w.lv>=3?8:0)+3*Math.min(5,w.lv))*ov*(w.evo?1.5:1);
    rings.push({x:P.x,y:P.y,r:0,R,l:.45,ml:.45,c:w.c,w:10});rings.push({x:P.x,y:P.y,r:0,R:R*.7,l:.35,ml:.35,c:'#ffffff',w:3});
-   for(const e of enemies){const dx=e.x-P.x,dy=e.y-P.y;if(!e.dead&&dx*dx+dy*dy<(R+e.r)**2){hit(e,dmg,Math.atan2(dy,dx),w,3.5);if(w.lv>=5)e.stun=.8}}}},
+   let hc=0;for(const e of enemies){const dx=e.x-P.x,dy=e.y-P.y;if(!e.dead&&dx*dx+dy*dy<(R+e.r)**2){hc++;hit(e,dmg,Math.atan2(dy,dx),w,3.5);if(w.lv>=5)e.stun=w.evo?1.4:.8}}
+   if(w.evo&&hc>=5)P.hp=Math.min(P.max,P.hp+2)}},
  rocket:{n:'Рой ракет',ic:'➶',c:'#4da6ff',d:'Самонаводящиеся ракеты со взрывом.',up:['','+1 ракета','+радиус взрыва','+1 ракета','+2 ракеты, +урон'],
-  cd:l=>2.3-.15*l,fire(w){const n=1+(w.lv>=2?1:0)+(w.lv>=4?1:0)+(w.lv>=5?2:0)+S.proj;
-   for(let i=0;i<n;i++)shoot(P.x,P.y,Math.random()*TAU,260,{r:6,dmg:20+(w.lv>=5?12:0)+5*w.lv,life:3,w,kind:'rocket',homing:1,explode:(55+(w.lv>=3?25:0))*S.area})}},
+  evo:{req:'area',n:'Ядерный залп',ic:'☢',d:'Огромные взрывы с разлётом осколков'},
+  cd:l=>2.3-.15*Math.min(5,l),fire(w){const ov=w.lv>5?Math.pow(1.15,w.lv-5):1;const n=1+(w.lv>=2?1:0)+(w.lv>=4?1:0)+(w.lv>=5?2:0)+S.proj+(w.evo?2:0);
+   for(let i=0;i<n;i++)shoot(P.x,P.y,Math.random()*TAU,260,{r:w.evo?8:6,dmg:(20+(w.lv>=5?12:0)+5*Math.min(5,w.lv))*ov*(w.evo?1.4:1),life:3,w,kind:'rocket',homing:1,cluster:w.evo?4:0,explode:(55+(w.lv>=3?25:0)+(w.evo?45:0))*S.area})}},
  mine:{n:'Нано-мины',ic:'✸',c:'#ffe600',d:'Мины на месте, взрываются при контакте.',up:['','+1 мина','+радиус','+1 мина','+80% урона'],
-  cd:l=>1.6-.1*l,fire(w){const n=1+(w.lv>=2?1:0)+(w.lv>=4?1:0)+S.proj;
-   for(let i=0;i<n;i++)mines.push({x:P.x+rnd(40),y:P.y+rnd(40),arm:.5,life:6,R:(75+(w.lv>=3?30:0))*S.area,dmg:(30+8*w.lv)*(w.lv>=5?1.8:1),w})}},
+  evo:{req:'amp',n:'Сингулярность',ic:'✵',d:'Притягивает врагов перед мощным взрывом'},
+  cd:l=>1.6-.1*Math.min(5,l),fire(w){const ov=w.lv>5?Math.pow(1.15,w.lv-5):1;const n=1+(w.lv>=2?1:0)+(w.lv>=4?1:0)+S.proj;
+   for(let i=0;i<n;i++)mines.push({x:P.x+rnd(40),y:P.y+rnd(40),arm:.5,life:6,R:(75+(w.lv>=3?30:0)+(w.evo?40:0))*S.area,dmg:(30+8*Math.min(5,w.lv))*(w.lv>=5?1.8:1)*ov*(w.evo?1.5:1),pull:!!w.evo,w})}},
  disc:{n:'Рикошет-диск',ic:'◈',c:'#80ffff',d:'Диск отскакивает от краёв экрана.',up:['','+1 диск','+время жизни','+1 диск','+скорость и урон'],
-  cd:l=>3.2-.2*l,fire(w){const n=1+(w.lv>=2?1:0)+(w.lv>=4?1:0)+S.proj;
-   for(let i=0;i<n;i++)shoot(P.x,P.y,Math.random()*TAU,w.lv>=5?520:400,{r:11*S.area,dmg:10+(w.lv>=5?10:0)+3*w.lv,pierce:1e9,rehit:.4,life:(3+(w.lv>=3?2:0))*S.dur,w,kind:'disc',bounce:1})}}
+  evo:{req:'crit',n:'Квантовый диск',ic:'❖',d:'Сверхбыстрый диск со взрывами при ударе'},
+  cd:l=>3.2-.2*Math.min(5,l),fire(w){const ov=w.lv>5?Math.pow(1.15,w.lv-5):1;const n=1+(w.lv>=2?1:0)+(w.lv>=4?1:0)+S.proj+(w.evo?1:0);
+   for(let i=0;i<n;i++)shoot(P.x,P.y,Math.random()*TAU,w.evo?640:(w.lv>=5?520:400),{r:(w.evo?14:11)*S.area,dmg:(10+(w.lv>=5?10:0)+3*Math.min(5,w.lv))*ov*(w.evo?1.5:1),pierce:1e9,rehit:w.evo?.25:.4,life:(3+(w.lv>=3?2:0))*S.dur,w,kind:'disc',bounce:1,blast:!!w.evo})}}
 };
 const PS={
- amp:{n:'Усилитель урона',ic:'▲',c:'#ff3c3c',d:'+10% урона',max:5},
- cpu:{n:'Разгон ЦП',ic:'⌁',c:'#ffe600',d:'-8% перезарядки оружия',max:5},
- area:{n:'Фокус-линзы',ic:'◌',c:'#ff8c00',d:'+12% области и длительности',max:5},
- servo:{n:'Сервоприводы',ic:'»',c:'#3cff9e',d:'+10% скорости движения',max:5},
- dup:{n:'Дубликатор',ic:'⧉',c:'#ffffff',d:'+1 снаряд всем оружиям',max:2},
- armor:{n:'Кибер-броня',ic:'⛨',c:'#8c8cff',d:'-1 входящий урон, +20 HP',max:5},
- nano:{n:'Наноботы',ic:'✚',c:'#ff5cf4',d:'+0.4 HP/сек регенерация',max:5},
- magnet:{n:'Магнит',ic:'∩',c:'#00f0ff',d:'+40% радиус сбора опыта',max:5},
- crit:{n:'Нейрочип',ic:'✪',c:'#ffd700',d:'+6% шанс крита (x2.5)',max:5}
+ amp:{n:'Усилитель урона',ic:'▲',c:'#ff3c3c',d:'+12% урона'},
+ cpu:{n:'Разгон ЦП',ic:'⌁',c:'#ffe600',d:'-10% перезарядки оружия'},
+ area:{n:'Фокус-линзы',ic:'◌',c:'#ff8c00',d:'+12% области и длительности'},
+ servo:{n:'Сервоприводы',ic:'»',c:'#3cff9e',d:'+8% скорости движения'},
+ dup:{n:'Дубликатор',ic:'⧉',c:'#ffffff',d:'+1 снаряд всем оружиям'},
+ armor:{n:'Кибер-броня',ic:'⛨',c:'#8c8cff',d:'-1 входящий урон, +20 HP'},
+ nano:{n:'Наноботы',ic:'✚',c:'#ff5cf4',d:'+0.5 HP/сек регенерация'},
+ magnet:{n:'Магнит',ic:'∩',c:'#00f0ff',d:'+35% радиус сбора опыта'},
+ crit:{n:'Нейрочип',ic:'✪',c:'#ffd700',d:'+6% шанс крита (x2.5)'}
 };
 const EN={
  drone:{r:10,hp:8,spd:72,dmg:8,c:'#ff2a6d',xp:1,n:6},
@@ -93,20 +103,21 @@ const EN={
  brute:{r:19,hp:45,spd:46,dmg:15,c:'#c9184a',xp:5,n:4},
  spitter:{r:12,hp:22,spd:58,dmg:8,c:'#ff9f1c',xp:3,n:4,shoot:2.2},
  elite:{r:24,hp:320,spd:62,dmg:18,c:'#ff4d00',xp:25,n:8,chest:1},
- boss:{r:52,hp:3500,spd:52,dmg:30,c:'#ff003c',xp:100,n:10,shoot:.7,chest:3,boss:1}
+ boss:{r:52,hp:3500,spd:52,dmg:30,c:'#ff003c',xp:100,n:10,shoot:.7,chest:3,boss:1},
+ arch:{r:68,hp:18000,spd:58,dmg:35,c:'#ff0055',xp:500,n:12,shoot:.45,boss:1,final:1}
 };
 
 // ---------- state ----------
-let state='menu',P,S,T,enemies,proj,ebul,mines,gems,items,parts,rings,bolts,slashes,texts,blooms,banners,kills,lvl,xp,pending,shake,flash,spawnT,nextElite,nextBoss,nextSwarm,cam,rain;
+let state='menu',P,S,T,enemies,proj,ebul,mines,gems,items,parts,rings,bolts,slashes,texts,blooms,banners,kills,lvl,xp,pending,shake,flash,spawnT,nextElite,nextBoss,nextSwarm,finalBoss,cam,rain;
 const best=+localStorage.getItem('neonsurv_best')||0;
 const pl=k=>P.pas[k]||0;
 function recalc(){const old=P.max||100;
- S={dmg:1+.1*pl('amp'),cd:Math.pow(.92,pl('cpu')),area:1+.12*pl('area'),dur:1+.12*pl('area'),spd:190*(1+.1*pl('servo')),proj:pl('dup'),armor:pl('armor'),regen:.4*pl('nano'),mag:75*(1+.4*pl('magnet')),crit:.05+.06*pl('crit')};
+ S={dmg:1+.12*pl('amp'),cd:1/(1+.12*pl('cpu')),area:1+.12*pl('area'),dur:1+.12*pl('area'),spd:190*(1+.08*pl('servo')),proj:pl('dup'),armor:pl('armor'),regen:.5*pl('nano'),mag:75*(1+.35*pl('magnet')),crit:.05+.65*(1-Math.pow(.88,pl('crit')))};
  P.max=100+20*pl('armor');P.hp+=P.max-old}
 function newGame(start){
  P={x:0,y:0,r:12,hp:100,max:100,inv:0,face:1,ang:0,weps:[],pas:{}};recalc();addItem('w',start);
  T=0;enemies=[];proj=[];ebul=[];mines=[];gems=[];items=[];parts=[];rings=[];bolts=[];slashes=[];texts=[];blooms=[];banners=[];
- kills=0;lvl=1;xp=0;pending=0;shake=0;flash=null;spawnT=0;nextElite=60;nextBoss=300;nextSwarm=90;cam={x:0,y:0};
+ kills=0;lvl=1;xp=0;pending=0;shake=0;flash=null;spawnT=0;nextElite=60;nextBoss=300;nextSwarm=90;finalBoss=0;cam={x:0,y:0};
  rain=Array.from({length:110},()=>({x:Math.random()*W,y:Math.random()*H,s:300+Math.random()*400,l:8+Math.random()*18}));
  Q=null;qCd=20;D=null;
  state='play';ui.innerHTML='';banner('ВХОД В СЕТЬ. ПРОДЕРЖИСЬ 15:00','#00f0ff')}
@@ -128,6 +139,7 @@ function hit(e,dmg,a,w,kb=1){if(e.dead)return;let crit=Math.random()<S.crit;dmg*
  if(e.hp<=0)kill(e,w)}
 function kill(e,w){e.dead=true;kills++;qEvent('kill',w);burst(e.x,e.y,e.c,e.boss?120:e.chest?50:14,e.boss?500:220);burst(e.x,e.y,'#ffffff',e.boss?40:4,160);
  blooms.push({x:e.x,y:e.y,r:e.r*4,l:.3,ml:.3,c:e.c});rings.push({x:e.x,y:e.y,r:e.r,R:e.r*(e.boss?8:3),l:.35,ml:.35,c:e.c,w:3});
+ if(e.final){startVictory();return}
  if(e.boss||e.chest){shake=Math.max(shake,e.boss?25:10);items.push({x:e.x,y:e.y,t:'chest',n:e.chest})}
  gems.push({x:e.x,y:e.y,v:e.xp});
  const r=Math.random();if(r<.012)items.push({x:e.x+10,y:e.y,t:'heal'});else if(r<.017)items.push({x:e.x+10,y:e.y,t:'magnet'});else if(r<.02)items.push({x:e.x+10,y:e.y,t:'bomb'})}
@@ -137,13 +149,16 @@ function hurt(d){d=Math.max(1,d-S.armor);P.hp-=d;P.inv=.45;shake=Math.max(shake,
  qEvent('hurt');if(P.hp<=0)startDeath()}
 function spawnE(t,x,y){const d=EN[t],hpM=1+T/50+(T>600?(T-600)/40:0);
  if(x===undefined){const a=Math.random()*TAU,R=Math.hypot(W,H)/2+40;x=P.x+Math.cos(a)*R;y=P.y+Math.sin(a)*R}
- enemies.push({t,x,y,r:d.r,hp:d.hp*hpM,max:d.hp*hpM,spd:d.spd*(1+Math.min(.5,T/1200)),dmg:d.dmg,c:d.c,xp:d.xp,n:d.n,shoot:d.shoot,sc:d.shoot?Math.random()*2:0,chest:d.chest,boss:d.boss,kx:0,ky:0,flash:0,rot:Math.random()*TAU,stun:0})}
+ enemies.push({t,x,y,r:d.r,hp:d.hp*hpM,max:d.hp*hpM,spd:d.spd*(1+Math.min(.5,T/1200)),dmg:d.dmg,c:d.c,xp:d.xp,n:d.n,shoot:d.shoot,sc:d.shoot?Math.random()*2:0,chest:d.chest,boss:d.boss,final:d.final,kx:0,ky:0,flash:0,rot:Math.random()*TAU,stun:0})}
 function pickType(){const r=Math.random();if(T>200&&r<.12)return'spitter';if(T>110&&r<.27)return'brute';if(T>40&&r<.5)return'runner';return'drone'}
-function addItem(kind,k){if(kind==='w'){const o=P.weps.find(w=>w.k===k);if(o)o.lv++;else P.weps.push({k,lv:1,t:.2,dealt:0})}else{P.pas[k]=pl(k)+1;recalc()}}
+function addItem(kind,k){if(kind==='e'){const o=P.weps.find(w=>w.k===k);if(o)o.evo=true;return}
+ if(kind==='w'){const o=P.weps.find(w=>w.k===k);if(o)o.lv++;else P.weps.push({k,lv:1,t:.2,dealt:0,evo:false})}else{P.pas[k]=pl(k)+1;recalc()}}
 function choices(n){const pool=[];
- for(const k in WP){const o=P.weps.find(w=>w.k===k);if(o?o.lv<5:P.weps.length<6)pool.push(['w',k])}
- for(const k in PS){const l=pl(k);if(l?l<PS[k].max:Object.keys(P.pas).length<6)pool.push(['p',k])}
- for(let i=pool.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[pool[i],pool[j]]=[pool[j],pool[i]]}return pool.slice(0,n)}
+ for(const w of P.weps){const ev=WP[w.k].evo;if(w.lv>=5&&!w.evo&&ev&&pl(ev.req)>0)pool.push(['e',w.k])}
+ for(const k in WP){const o=P.weps.find(w=>w.k===k);if(o||P.weps.length<6)pool.push(['w',k])}
+ for(const k in PS){const l=pl(k);if(l||Object.keys(P.pas).length<6)pool.push(['p',k])}
+ for(let i=pool.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[pool[i],pool[j]]=[pool[j],pool[i]]}
+ pool.sort((a,b)=>(b[0]==='e')-(a[0]==='e'));return pool.slice(0,n)}
 
 function update(dt){
  T+=dt;
@@ -158,8 +173,9 @@ function update(dt){
  if(spawnT<=0&&enemies.length<target){spawnT=Math.max(.06,.55-T/500);for(let i=0;i<1+Math.floor(T/100);i++)spawnE(pickType())}
  if(T>=nextElite){nextElite+=60;spawnE('elite');banner('ЭЛИТНЫЙ ВРАГ: НЕСЁТ КЕЙС','#ff8c00')}
  if(T>=nextSwarm){nextSwarm+=90;const R=Math.min(W,H)*.55;for(let i=0;i<36;i++){const a=i/36*TAU;spawnE(T>200?'runner':'drone',P.x+Math.cos(a)*R,P.y+Math.sin(a)*R)}banner('РОЙ ОКРУЖАЕТ!','#ff2bd6')}
- if(T>=nextBoss){nextBoss+=300;spawnE('boss');banner('⚠ БОСС: ЯДРО-СТРАЖ ⚠','#ff2a6d');flash={c:'#ff2a6d',l:.5,ml:.5}}
- if(T>=900)return startVictory();
+ if(T>=nextBoss&&T<840){nextBoss+=300;spawnE('boss');banner('⚠ БОСС: ЯДРО-СТРАЖ ⚠','#ff2a6d');flash={c:'#ff2a6d',l:.5,ml:.5}}
+ if(T>=840&&!finalBoss){finalBoss=1;spawnE('arch');banner('⚠ ФИНАЛЬНЫЙ БОСС: АРХИТЕКТОР СЕТИ ⚠','#ff0055');flash={c:'#ff0055',l:.8,ml:.8};shake=15}
+ if(T>=900&&!enemies.some(e=>e.final))return startVictory();
  // enemies + separation grid
  const grid=new Map();
  for(const e of enemies){const k=(Math.floor(e.x/36)*7919+Math.floor(e.y/36));let c=grid.get(k);if(!c)grid.set(k,c=[]);c.push(e)}
@@ -170,7 +186,11 @@ function update(dt){
   e.x+=(ax/d*sp+e.kx)*dt;e.y+=(ay/d*sp+e.ky)*dt;e.kx*=Math.pow(.02,dt);e.ky*=Math.pow(.02,dt);e.flash-=dt;e.rot+=dt*(e.t==='runner'?6:1.2);
   const c=grid.get(Math.floor(e.x/36)*7919+Math.floor(e.y/36));
   if(c)for(const o of c){if(o===e)continue;const sx=e.x-o.x,sy=e.y-o.y,sd=Math.hypot(sx,sy)||.1,m=e.r+o.r;if(sd<m){const p=(m-sd)/sd*.25;e.x+=sx*p;e.y+=sy*p}}
-  if(e.shoot&&d<600){e.sc-=dt;if(e.sc<=0){e.sc=e.shoot;if(e.boss){const n=14,o=T*1.3;for(let i=0;i<n;i++){const a=o+i/n*TAU;ebul.push({x:e.x,y:e.y,vx:Math.cos(a)*190,vy:Math.sin(a)*190,l:4,c:e.c})}}
+  if(e.shoot&&d<750){e.sc-=dt;if(e.sc<=0){e.sc=e.shoot;if(e.final){const n=e.hp<e.max*.5?18:12,o=T*1.8;
+    for(let i=0;i<n;i++){const a=o+i/n*TAU;ebul.push({x:e.x,y:e.y,vx:Math.cos(a)*220,vy:Math.sin(a)*220,l:4.5,c:e.c})}
+    if(e.hp<e.max*.5&&Math.random()<.4){const ba=Math.atan2(P.y-e.y,P.x-e.x);for(let i=-2;i<=2;i++)ebul.push({x:e.x,y:e.y,vx:Math.cos(ba+i*.15)*310,vy:Math.sin(ba+i*.15)*310,l:3.5,c:'#ff9f1c'})}
+    if(!e.p2&&e.hp<e.max*.5){e.p2=1;for(let i=0;i<8;i++){const a=i/8*TAU;spawnE('runner',e.x+Math.cos(a)*90,e.y+Math.sin(a)*90)}banner('АРХИТЕКТОР В ЯРОСТИ!','#ff0055')}}
+   else if(e.boss){const n=14,o=T*1.3;for(let i=0;i<n;i++){const a=o+i/n*TAU;ebul.push({x:e.x,y:e.y,vx:Math.cos(a)*190,vy:Math.sin(a)*190,l:4,c:e.c})}}
    else ebul.push({x:e.x,y:e.y,vx:ax/d*230,vy:ay/d*230,l:3,c:e.c})}}
   if(P.inv<=0&&d<e.r+P.r)hurt(e.dmg)}
  enemies=enemies.filter(e=>!e.dead);
@@ -181,10 +201,12 @@ function update(dt){
   b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;
   if(b.bounce){const hw=W/2,hh=H/2;if(b.x<cam.x-hw&&b.vx<0||b.x>cam.x+hw&&b.vx>0){b.vx*=-1;burst(b.x,b.y,b.c,6,120)}if(b.y<cam.y-hh&&b.vy<0||b.y>cam.y+hh&&b.vy>0){b.vy*=-1;burst(b.x,b.y,b.c,6,120)}}
   for(const e of enemies){if(e.dead)continue;const dx=e.x-b.x,dy=e.y-b.y;if(dx*dx+dy*dy<(e.r+b.r)**2){const lt=b.hit.get(e);if(lt!==undefined&&T-lt<b.rehit)continue;
-   if(b.explode){explode(b.x,b.y,b.explode,b.dmg,b.c,b.w);b.life=0;break}
+   if(b.explode){explode(b.x,b.y,b.explode,b.dmg,b.c,b.w);if(b.cluster)for(let k=0;k<b.cluster;k++)shoot(b.x,b.y,k/b.cluster*TAU+Math.random()*.5,380,{r:4,dmg:b.dmg*.5,life:.45,w:b.w,kind:'bolt',explode:b.explode*.45});b.life=0;break}
+   if(b.blast)explode(b.x,b.y,45*S.area,b.dmg*.4,b.c,b.w);
    hit(e,b.dmg,Math.atan2(b.vy,b.vx),b.w);b.hit.set(e,T);if(--b.pierce<=0){b.life=0;burst(b.x,b.y,b.c,5,140);break}}}}
  proj=proj.filter(b=>b.life>0);
- for(const m of mines){m.arm-=dt;m.life-=dt;let go=m.life<=0;if(m.arm<=0&&!go)for(const e of enemies)if((e.x-m.x)**2+(e.y-m.y)**2<(e.r+16)**2){go=true;break}
+ for(const m of mines){m.arm-=dt;m.life-=dt;if(m.pull&&m.arm<=0)for(const e of enemies){if(e.dead||e.boss)continue;const dx=m.x-e.x,dy=m.y-e.y,d2=dx*dx+dy*dy;if(d2<m.R*m.R*2&&d2>40){const d=Math.sqrt(d2);e.x+=dx/d*95*dt;e.y+=dy/d*95*dt}}
+  let go=m.life<=0;if(m.arm<=0&&!go)for(const e of enemies)if((e.x-m.x)**2+(e.y-m.y)**2<(e.r+16)**2){go=true;break}
   if(go){explode(m.x,m.y,m.R,m.dmg,'#ffe600',m.w);m.done=1}}
  mines=mines.filter(m=>!m.done);
  for(const b of ebul){b.x+=b.vx*dt;b.y+=b.vy*dt;b.l-=dt;if(P.inv<=0&&(b.x-P.x)**2+(b.y-P.y)**2<(P.r+5)**2){b.l=0;hurt(8)}}
@@ -213,7 +235,7 @@ let Q,qCd,D;
 function newQuest(){const ws=P.weps.filter(w=>WP[w.k].fire||WP[w.k].tick),opts=['kills','nohit','gems','zone','weapon'];const ty=opts[Math.random()*opts.length|0];
  const base={ty,prog:0,rew:Math.floor(need()*.7)+10};
  if(ty==='kills')Q=Object.assign(base,{goal:25+Math.floor(T/12),lim:25,txt:'Убей врагов на скорость'});
- if(ty==='nohit')Q=Object.assign(base,{goal:25,lim:999,txt:'Не получай урон 25 сек',rew:Math.floor(need()*.9)+10});
+ if(ty==='nohit')Q=Object.assign(base,{goal:15,lim:30,txt:'Не получай урон 15 сек',rew:Math.floor(need()*.9)+10});
  if(ty==='gems')Q=Object.assign(base,{goal:30+Math.floor(T/15),lim:25,txt:'Собери кристаллы опыта'});
  if(ty==='zone'){const a=Math.random()*TAU;Q=Object.assign(base,{goal:6,lim:40,txt:'Взломай узел данных',zx:P.x+Math.cos(a)*450,zy:P.y+Math.sin(a)*450,zr:80,rew:Math.floor(need()*1.1)+15})}
  if(ty==='weapon'){const w=ws[Math.random()*ws.length|0];Q=Object.assign(base,{goal:20+Math.floor(T/20),lim:35,wk:w.k,txt:'Убей врагов: '+WP[w.k].n})}
@@ -227,7 +249,7 @@ function questUpdate(dt){
   for(let i=0;i<5;i++)rings.push({x:P.x,y:P.y,r:10,R:100+i*60,l:.5+i*.1,ml:.5+i*.1,c:i%2?'#ffd700':'#ffffff',w:4});burst(P.x,P.y,'#ffd700',70,380);
   if(Q.ty==='zone'){burst(Q.zx,Q.zy,'#ffd700',60,300);blooms.push({x:Q.zx,y:Q.zy,r:200,l:.5,ml:.5,c:'#ffd700'})}
   Q=null;qCd=8}
- else if(Q.time<=0){banner('КОНТРАКТ ПРОВАЛЕН','#ff2a6d');Q=null;qCd=8}}
+ else if(Q.time<=0){banner('КОНТРАКТ ЗАВЕРШЁН: ВРЕМЯ ВЫШЛО','#ff9f1c');Q=null;qCd=8}}
 function qEvent(ev,w){if(!Q)return;if(ev==='kill'&&(Q.ty==='kills'||(Q.ty==='weapon'&&w&&w.k===Q.wk)))Q.prog++;if(ev==='gem'&&Q.ty==='gems')Q.prog++;if(ev==='hurt'&&Q.ty==='nohit')Q.prog=0}
 
 // ---------- death animation ----------
@@ -271,7 +293,7 @@ function pickup(it){
  if(it.t==='heal'){P.hp=Math.min(P.max,P.hp+35);text(P.x,P.y-24,'+35 HP','#3cff9e',1);burst(P.x,P.y,'#3cff9e',30,200)}
  if(it.t==='magnet'){gems.forEach(g=>g.m=1);rings.push({x:P.x,y:P.y,r:10,R:900,l:.6,ml:.6,c:'#00f0ff',w:4});banner('МАГНИТ-МАЯК','#00f0ff')}
  if(it.t==='bomb'){flash={c:'#ffffff',l:.35,ml:.35};shake=20;for(const e of enemies){const dx=e.x-P.x,dy=e.y-P.y;if(dx*dx+dy*dy<(W*W+H*H)/4)hit(e,e.boss?300:9999,Math.atan2(dy,dx),{dealt:0},2)}banner('ЛОГИЧЕСКАЯ БОМБА','#ffffff')}
- if(it.t==='chest'){const got=[];for(let i=0;i<it.n;i++){const c=choices(1)[0];if(!c)break;addItem(c[0],c[1]);got.push((c[0]==='w'?WP:PS)[c[1]].n)}
+ if(it.t==='chest'){const got=[];for(let i=0;i<it.n;i++){const c=choices(1)[0];if(!c)break;addItem(c[0],c[1]);got.push(c[0]==='e'?'ЭВОЛЮЦИЯ: '+WP[c[1]].evo.n:(c[0]==='w'?WP:PS)[c[1]].n)}
   if(!got.length){P.hp=P.max;got.push('Полное восстановление')}
   flash={c:'#ffd700',l:.4,ml:.4};for(let i=0;i<6;i++)rings.push({x:P.x,y:P.y,r:10,R:120+i*50,l:.5+i*.08,ml:.5+i*.08,c:['#ff2bd6','#00f0ff','#ffe600','#3cff9e','#ff8c00','#c56cff'][i],w:4});
   burst(P.x,P.y,'#ffd700',80,400);banner('КЕЙС: '+got.join(', '),'#ffd700')}}
@@ -280,12 +302,14 @@ function levelUp(){const opts=choices(3);
  burst(P.x,P.y,'#ffe600',60,350);
  if(!opts.length){pending=0;P.hp=Math.min(P.max,P.hp+25);kills+=10;text(P.x,P.y-28,'ОВЕРДРАЙВ +25 HP','#00f0ff',1);return}
  state='lvl';
- ui.innerHTML=`<div class="panel"><h2>⬆ УРОВЕНЬ ${lvl} ⬆</h2><div class="cards">`+opts.map(([k,id])=>{const d=k==='w'?WP[id]:PS[id];const cur=k==='w'?(P.weps.find(w=>w.k===id)||{}).lv||0:pl(id);
-  const ds=k==='w'?(cur?d.up[cur]:d.d):d.d;
+ ui.innerHTML=`<div class="panel"><h2>⬆ УРОВЕНЬ ${lvl} ⬆</h2><div class="cards">`+opts.map(([k,id])=>{
+  if(k==='e'){const w=WP[id],ev=w.evo;return `<button class="card" style="border-color:#ffd700;box-shadow:0 0 22px #ffd700;background:rgba(40,25,0,.85)" onclick="pickLv('e','${id}')"><div class="ic" style="color:#ffd700;text-shadow:0 0 18px #ffd700">${ev.ic}</div><div class="nm" style="color:#ffd700">${ev.n}</div><div class="lv new">ЭВОЛЮЦИЯ!</div><div class="ds">${ev.d}</div></button>`}
+  const d=k==='w'?WP[id]:PS[id];const cur=k==='w'?(P.weps.find(w=>w.k===id)||{}).lv||0:pl(id);
+  const ds=k==='w'?(cur>=5?'ОВЕРКЛОК: +15% урона':(cur?d.up[cur]:d.d)):d.d;
   return `<button class="card" style="border-color:${d.c};box-shadow:0 0 14px ${d.c}" onclick="pickLv('${k}','${id}')"><div class="ic" style="color:${d.c};text-shadow:0 0 14px ${d.c}">${d.ic}</div><div class="nm">${d.n}</div><div class="lv ${cur?'':'new'}">${cur?`Ур. ${cur} → ${cur+1}`:(k==='w'?'НОВОЕ ОРУЖИЕ':'НОВЫЙ ПРЕДМЕТ')}</div><div class="ds">${ds}</div></button>`}).join('')+`</div><p style="font-size:12px">Оружие ${P.weps.length}/6 · Предметы ${Object.keys(P.pas).length}/6</p></div>`}
 function pickLv(k,id){if(k==='heal')P.hp=Math.min(P.max,P.hp+50);else addItem(k,id);pending--;ui.innerHTML='';state='play';last=performance.now();if(pending>0)levelUp()}
 function togglePause(){if(state==='play'){state='pause';ui.innerHTML=`<div class="panel"><h2>ПАУЗА</h2>${buildTable()}<button onclick="togglePause()">ПРОДОЛЖИТЬ</button></div>`}else if(state==='pause'){state='play';ui.innerHTML='';last=performance.now()}}
-function buildTable(){return `<table>${P.weps.map(w=>`<tr><td style="color:${WP[w.k].c}">${WP[w.k].ic} ${WP[w.k].n}</td><td>ур. ${w.lv}</td><td>${Math.round(w.dealt)} урона</td></tr>`).join('')}
+function buildTable(){return `<table>${P.weps.map(w=>`<tr><td style="color:${w.evo?'#ffd700':WP[w.k].c}">${w.evo?WP[w.k].evo.ic+' '+WP[w.k].evo.n:WP[w.k].ic+' '+WP[w.k].n}</td><td>ур. ${w.lv}${w.evo?' ★':''}</td><td>${Math.round(w.dealt)} урона</td></tr>`).join('')}
  ${Object.keys(P.pas).map(k=>`<tr><td style="color:${PS[k].c}">${PS[k].ic} ${PS[k].n}</td><td>ур. ${P.pas[k]}</td><td>${PS[k].d}</td></tr>`).join('')}</table>`}
 function endGame(win){state='over';const sc=Math.floor(T)*10+kills;if(sc>best)localStorage.setItem('neonsurv_best',sc);
  ui.innerHTML=`<div class="panel"><h1 style="font-size:34px">${win?'СЕТЬ ОСВОБОЖДЕНА':'СИСТЕМА ВЗЛОМАНА'}</h1><p>Время ${fmt(T)} · Уровень ${lvl} · Убито ${kills} · Счёт ${sc} ${sc>best?'<b style="color:#ffe600">НОВЫЙ РЕКОРД!</b>':'(рекорд '+best+')'}</p>${buildTable()}<button onclick="menu()">В ГЛАВНОЕ МЕНЮ</button></div>`}
@@ -365,17 +389,23 @@ function hud(t){
  ctx.textAlign='right';ctx.fillStyle='#ff2bd6';ctx.fillText('☠ '+kills,W-14,18);
  ctx.textAlign='center';ctx.font='bold 30px Consolas';ctx.fillStyle='#ff2a6d';ctx.fillText(fmt(T),W/2+2,18);ctx.fillStyle='#00f0ff';ctx.fillText(fmt(T),W/2-2,18);ctx.fillStyle='#fff';ctx.fillText(fmt(T),W/2,18);
  // inventory
- const icons=[...P.weps.map(w=>[WP[w.k],w.lv,5]),...Object.keys(P.pas).map(k=>[PS[k],P.pas[k],PS[k].max])];
- icons.forEach(([d,l,mx],i)=>{const row=i<P.weps.length?0:1,col=row?i-P.weps.length:i,x=14+col*44,y=H-96+row*46;
-  ctx.fillStyle='rgba(5,0,20,.75)';ctx.fillRect(x,y,38,38);ctx.strokeStyle=d.c;ctx.lineWidth=l>=mx?3:1.5;ctx.strokeRect(x,y,38,38);
+ const icons=[...P.weps.map(w=>[w.evo?Object.assign({},WP[w.k],{ic:WP[w.k].evo.ic,c:'#ffd700'}):WP[w.k],w.lv,w.evo]),...Object.keys(P.pas).map(k=>[PS[k],P.pas[k],false])];
+ icons.forEach(([d,l,ev],i)=>{const row=i<P.weps.length?0:1,col=row?i-P.weps.length:i,x=14+col*44,y=H-96+row*46;
+  ctx.fillStyle='rgba(5,0,20,.75)';ctx.fillRect(x,y,38,38);ctx.strokeStyle=d.c;ctx.lineWidth=ev?3:1.5;ctx.strokeRect(x,y,38,38);
   ctx.font='20px Segoe UI Symbol,Consolas';ctx.textBaseline='middle';ctx.fillStyle=d.c;ctx.fillText(d.ic,x+19,y+17);
-  ctx.font='bold 10px Consolas';ctx.fillStyle=l>=mx?'#ffe600':'#fff';ctx.fillText(l>=mx?'MAX':l,x+19,y+32)});
+  ctx.font='bold 10px Consolas';ctx.fillStyle=ev?'#ffd700':'#fff';ctx.fillText(ev?'★'+l:l,x+19,y+32)});
+ // final boss bar & pointer
+ const fb=enemies.find(e=>e.final);
+ if(fb){const bw=Math.min(460,W-80),bx=W/2-bw/2,by=56;ctx.fillStyle='rgba(20,0,10,.8)';ctx.fillRect(bx,by,bw,14);ctx.fillStyle='#ff0055';ctx.fillRect(bx,by,bw*Math.max(0,fb.hp)/fb.max,14);
+  ctx.strokeStyle='#ff0055';ctx.lineWidth=1.5;ctx.strokeRect(bx,by,bw,14);ctx.font='bold 12px Consolas';ctx.fillStyle='#fff';ctx.fillText('АРХИТЕКТОР СЕТИ: '+Math.ceil(fb.hp)+' HP',W/2,by+7);
+  const dx=fb.x-cam.x,dy=fb.y-cam.y;if(Math.abs(dx)>W/2-30||Math.abs(dy)>H/2-30){const a=Math.atan2(dy,dx),s=Math.min((W/2-40)/Math.abs(Math.cos(a)),(H/2-40)/Math.abs(Math.sin(a)));
+   ctx.save();ctx.translate(W/2+Math.cos(a)*s,H/2+Math.sin(a)*s);ctx.rotate(a);ctx.fillStyle='#ff0055';ctx.beginPath();ctx.moveTo(18,0);ctx.lineTo(-9,-11);ctx.lineTo(-9,11);ctx.fill();ctx.restore()}}
  for(const b of banners){const a=Math.min(1,b.l,(3-b.l)*4);ctx.globalAlpha=a;ctx.font='bold 26px Consolas';ctx.textBaseline='middle';const y=H*.22,j=Math.random()<.1?rnd(6):0;
   ctx.fillStyle='#ff2a6d';ctx.fillText(b.t,W/2+3+j,y);ctx.fillStyle='#00f0ff';ctx.fillText(b.t,W/2-3-j,y);ctx.fillStyle=b.c;ctx.fillText(b.t,W/2,y);ctx.globalAlpha=1}
  if(Q){const x=W-270,y=50,k=Math.min(1,Q.prog/Q.goal);ctx.textAlign='left';ctx.textBaseline='top';ctx.fillStyle='rgba(20,10,0,.7)';ctx.fillRect(x,y,256,64);ctx.strokeStyle='#ffd700';ctx.lineWidth=1.5;ctx.strokeRect(x,y,256,64);
   ctx.font='bold 13px Consolas';ctx.fillStyle='#ffd700';ctx.fillText('КОНТРАКТ  +'+Q.rew+' XP',x+8,y+6);ctx.font='13px Consolas';ctx.fillStyle='#fff';ctx.fillText(Q.txt,x+8,y+24);
   ctx.fillStyle='#332200';ctx.fillRect(x+8,y+44,240,10);ctx.fillStyle='#ffd700';ctx.fillRect(x+8,y+44,240*k,10);
-  ctx.textAlign='right';ctx.fillStyle=Q.time<6?'#ff2a6d':'#fff';ctx.fillText((Q.ty==='nohit'?'':Math.ceil(Q.time)+'с  ')+Math.floor(Q.prog)+'/'+Q.goal,x+248,y+6);ctx.textAlign='center';
+  ctx.textAlign='right';ctx.fillStyle=Q.time<6?'#ff2a6d':'#fff';ctx.fillText(Math.ceil(Q.time)+'с  '+Math.floor(Q.prog)+'/'+Q.goal,x+248,y+6);ctx.textAlign='center';
   if(Q.ty==='zone'){const dx=Q.zx-cam.x,dy=Q.zy-cam.y;if(Math.abs(dx)>W/2-30||Math.abs(dy)>H/2-30){const a=Math.atan2(dy,dx),s=Math.min((W/2-40)/Math.abs(Math.cos(a)),(H/2-40)/Math.abs(Math.sin(a)));
    ctx.save();ctx.translate(W/2+Math.cos(a)*s,H/2+Math.sin(a)*s);ctx.rotate(a);ctx.fillStyle='#ffd700';ctx.beginPath();ctx.moveTo(16,0);ctx.lineTo(-8,-10);ctx.lineTo(-8,10);ctx.fill();ctx.restore()}}}
  if(P.hp<P.max*.3){ctx.fillStyle=`rgba(255,0,60,${.12+.08*Math.sin(t*8)})`;ctx.fillRect(0,0,W,H)}}
