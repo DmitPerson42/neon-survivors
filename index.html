@@ -62,11 +62,6 @@ const WP={
    for(let i=0;i<n;i++){const a=w.a+i/n*TAU,x=P.x+Math.cos(a)*R,y=P.y+Math.sin(a)*R;w.pos.push([x,y]);
     for(const e of enemies){if(e.dead)continue;const dx=e.x-x,dy=e.y-y;if(dx*dx+dy*dy<(e.r+11*S.area)**2&&T-(e.ho||-9)>.35){e.ho=T;hit(e,dmg,Math.atan2(dy,dx),w)}}
     if(Math.random()<.5)part(x,y,rnd(20),rnd(20),.3,w.c,2)}}},
- chain:{n:'Цепная молния',ic:'ϟ',c:'#b8a6ff',d:'Молния перескакивает между врагами.',up:['','+2 прыжка','+40% урона','+1 разряд','+3 прыжка'],
-  cd:l=>1.7-.1*l,fire(w){const casts=1+(w.lv>=4?1:0)+S.proj,jumps=2+(w.lv>=2?2:0)+(w.lv>=5?3:0),dmg=14+(w.lv>=3?8:0)+3*w.lv;
-   for(let c=0;c<casts;c++){let cur=nearest(P.x,P.y,500,new Set(),c);if(!cur)return;const pts=[[P.x,P.y]],seen=new Set();
-    for(let j=0;j<=jumps&&cur;j++){seen.add(cur);pts.push([cur.x,cur.y]);hit(cur,dmg,Math.random()*TAU,w);burst(cur.x,cur.y,w.c,6,160);cur=nearest(cur.x,cur.y,200,seen)}
-    bolts.push({pts,l:.22,ml:.22,c:w.c})}}},
  whip:{n:'Лазерный клинок',ic:'⟋',c:'#ff3c7a',d:'Мощный горизонтальный взмах.',up:['','+30% урона','Удар в обе стороны','+размер','+60% урона'],
   cd:l=>1.25-.07*l,fire(w){const dirs=w.lv>=3?[P.face,-P.face]:[P.face],ww=(150+(w.lv>=4?50:0))*S.area,hh=46*S.area,dmg=(18+(w.lv>=2?6:0)+(w.lv>=5?14:0)+3*w.lv);
    dirs.forEach((d,i)=>setTimeout(()=>{if(state==='over')return;const cx=P.x+d*(ww/2+8),cy=P.y-6+i*12;slashes.push({x:cx,y:cy,d,w:ww,h:hh,l:.22,ml:.22,c:w.c});
@@ -381,8 +376,8 @@ function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;
 function menu(){state='menu';rain=Array.from({length:110},()=>({x:Math.random()*W,y:Math.random()*H,s:300+Math.random()*400,l:8+Math.random()*18}));
  const b=+localStorage.getItem('neonsurv_best')||0;
  ui.innerHTML=`<div class="panel"><h1>NEON SURVIVORS</h1><p>Мегаполис захвачен вирусным роем. Продержись <b style="color:#ffe600">15 минут</b>.<br>Оружие стреляет само - ты только двигаешься (WASD / стрелки). Esc - пауза.<br>Собирай кристаллы опыта, выбирай улучшения, круши боссов и открывай кейсы.</p>
- <h2>ВЫБЕРИ СТАРТОВОЕ ОРУЖИЕ</h2><div class="cards">${['blaster','whip','orbit','chain'].map(k=>{const d=WP[k];return `<button class="card" style="border-color:${d.c};box-shadow:0 0 14px ${d.c};min-height:150px" onclick="newGame('${k}')"><div class="ic" style="color:${d.c};text-shadow:0 0 14px ${d.c}">${d.ic}</div><div class="nm">${d.n}</div><div class="ds">${d.d}</div></button>`}).join('')}</div>
- <p style="font-size:13px">8 видов оружия · 9 предметов · рекорд: ${b}</p></div>`}
+ <h2>ВЫБЕРИ СТАРТОВОЕ ОРУЖИЕ</h2><div class="cards">${['blaster','whip','orbit','rocket'].map(k=>{const d=WP[k];return `<button class="card" style="border-color:${d.c};box-shadow:0 0 14px ${d.c};min-height:150px" onclick="newGame('${k}')"><div class="ic" style="color:${d.c};text-shadow:0 0 14px ${d.c}">${d.ic}</div><div class="nm">${d.n}</div><div class="ds">${d.d}</div></button>`}).join('')}</div>
+ <p style="font-size:13px">7 видов оружия · 9 предметов · рекорд: ${b}</p></div>`}
 menu();requestAnimationFrame(loop);
 </script>
 </body>
