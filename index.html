@@ -33,7 +33,7 @@ p{color:#cfe}
 'use strict';
 const cv=document.getElementById('c'),ctx=cv.getContext('2d'),ui=document.getElementById('ui');
 let W,H,vig;
-function rs(){W=cv.width=innerWidth;H=cv.height=innerHeight;vig=document.createElement('canvas');vig.width=W;vig.height=H;const v=vig.getContext('2d');
+function rs(){W=cv.width=Math.max(1,innerWidth);H=cv.height=Math.max(1,innerHeight);vig=document.createElement('canvas');vig.width=W;vig.height=H;const v=vig.getContext('2d');
  const g=v.createRadialGradient(W/2,H/2,Math.min(W,H)*.35,W/2,H/2,Math.max(W,H)*.75);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(5,0,20,.85)');v.fillStyle=g;v.fillRect(0,0,W,H);
  v.fillStyle='rgba(0,0,0,.12)';for(let y=0;y<H;y+=3)v.fillRect(0,y,W,1);}
 addEventListener('resize',rs);rs();
@@ -159,7 +159,7 @@ function update(dt){
  if(T>=nextElite){nextElite+=60;spawnE('elite');banner('ЭЛИТНЫЙ ВРАГ: НЕСЁТ КЕЙС','#ff8c00')}
  if(T>=nextSwarm){nextSwarm+=90;const R=Math.min(W,H)*.55;for(let i=0;i<36;i++){const a=i/36*TAU;spawnE(T>200?'runner':'drone',P.x+Math.cos(a)*R,P.y+Math.sin(a)*R)}banner('РОЙ ОКРУЖАЕТ!','#ff2bd6')}
  if(T>=nextBoss){nextBoss+=300;spawnE('boss');banner('⚠ БОСС: ЯДРО-СТРАЖ ⚠','#ff2a6d');flash={c:'#ff2a6d',l:.5,ml:.5}}
- if(T>=900)return endGame(true);
+ if(T>=900)return startVictory();
  // enemies + separation grid
  const grid=new Map();
  for(const e of enemies){const k=(Math.floor(e.x/36)*7919+Math.floor(e.y/36));let c=grid.get(k);if(!c)grid.set(k,c=[]);c.push(e)}
@@ -255,6 +255,18 @@ function drawDeathScreen(){if(D.t<1.4)return;const a=Math.min(1,(D.t-1.4)*1.5),t
  const j=Math.random()<.25?rnd(14):rnd(3);ctx.fillStyle='#ff2a6d';ctx.fillText(txt,W/2+6+j,y);ctx.fillStyle='#00f0ff';ctx.fillText(txt,W/2-6-j,y);ctx.fillStyle='#fff';ctx.fillText(txt,W/2,y);
  for(let i=0;i<5;i++)if(Math.random()<.5){const sy=y-40+Math.random()*80,sh=4+Math.random()*10;ctx.drawImage(cv,0,sy,W,sh,rnd(30),sy,W,sh)}
  ctx.font='18px Consolas';ctx.fillStyle='#ff2bd6';ctx.fillText('> критическая ошибка ядра · '+fmt(T)+' · уровень '+lvl,W/2,y+60);ctx.globalAlpha=1}
+function startVictory(){if(state==='victory')return;state='victory';D={t:0};shake=18;flash={c:'#00f0ff',l:.8,ml:.8};banners=[];ebul=[];
+ for(const e of enemies){e.dead=true;burst(e.x,e.y,e.c,14,300)}enemies=[];
+ const cs=['#00f0ff','#3cff9e','#ffe600','#ff2bd6','#ffffff'];
+ for(let i=0;i<8;i++)rings.push({x:P.x,y:P.y,r:10,R:140+i*110,l:.8+i*.15,ml:.8+i*.15,c:cs[i%5],w:8});
+ burst(P.x,P.y,'#00f0ff',160,550)}
+function victoryUpdate(dt){D.t+=dt;
+ if(Math.random()<.45){const a=Math.random()*TAU,r=Math.random()*360;burst(P.x+Math.cos(a)*r,P.y+Math.sin(a)*r,['#00f0ff','#3cff9e','#ffe600','#ff2bd6'][Math.random()*4|0],18,260)}
+ fx(dt);if(D.t>=4)endGame(true)}
+function drawVictoryScreen(){const a=Math.min(1,D.t*1.2),txt='СЕТЬ ОСВОБОЖДЕНА',y=H*.42;
+ ctx.fillStyle=`rgba(0,15,30,${a*.35})`;ctx.fillRect(0,0,W,H);ctx.globalAlpha=a;ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='bold '+Math.min(72,W/12)+'px Consolas';
+ ctx.fillStyle='#ff2bd6';ctx.fillText(txt,W/2+4,y);ctx.fillStyle='#00f0ff';ctx.fillText(txt,W/2-4,y);ctx.fillStyle='#fff';ctx.fillText(txt,W/2,y);
+ ctx.font='18px Consolas';ctx.fillStyle='#3cff9e';ctx.fillText('> вирусный рой уничтожен · сектор чист · уровень '+lvl,W/2,y+60);ctx.globalAlpha=1}
 function pickup(it){
  if(it.t==='heal'){P.hp=Math.min(P.max,P.hp+35);text(P.x,P.y-24,'+35 HP','#3cff9e',1);burst(P.x,P.y,'#3cff9e',30,200)}
  if(it.t==='magnet'){gems.forEach(g=>g.m=1);rings.push({x:P.x,y:P.y,r:10,R:900,l:.6,ml:.6,c:'#00f0ff',w:4});banner('МАГНИТ-МАЯК','#00f0ff')}
@@ -263,10 +275,11 @@ function pickup(it){
   if(!got.length){P.hp=P.max;got.push('Полное восстановление')}
   flash={c:'#ffd700',l:.4,ml:.4};for(let i=0;i<6;i++)rings.push({x:P.x,y:P.y,r:10,R:120+i*50,l:.5+i*.08,ml:.5+i*.08,c:['#ff2bd6','#00f0ff','#ffe600','#3cff9e','#ff8c00','#c56cff'][i],w:4});
   burst(P.x,P.y,'#ffd700',80,400);banner('КЕЙС: '+got.join(', '),'#ffd700')}}
-function levelUp(){state='lvl';const opts=choices(3);
+function levelUp(){const opts=choices(3);
  for(let i=0;i<7;i++)rings.push({x:P.x,y:P.y,r:5,R:90+i*45,l:.6,ml:.6,c:`hsl(${i*50},100%,60%)`.replace(/.*/,['#ff2bd6','#ff3c3c','#ff8c00','#ffe600','#3cff9e','#00f0ff','#c56cff'][i]),w:3});
  burst(P.x,P.y,'#ffe600',60,350);
- if(!opts.length){ui.innerHTML=`<div class="panel"><h2>УРОВЕНЬ ${lvl}</h2><p>Всё прокачано на максимум!</p><button onclick="pickLv('heal')">+50 HP</button></div>`;return}
+ if(!opts.length){pending=0;P.hp=Math.min(P.max,P.hp+25);kills+=10;text(P.x,P.y-28,'ОВЕРДРАЙВ +25 HP','#00f0ff',1);return}
+ state='lvl';
  ui.innerHTML=`<div class="panel"><h2>⬆ УРОВЕНЬ ${lvl} ⬆</h2><div class="cards">`+opts.map(([k,id])=>{const d=k==='w'?WP[id]:PS[id];const cur=k==='w'?(P.weps.find(w=>w.k===id)||{}).lv||0:pl(id);
   const ds=k==='w'?(cur?d.up[cur]:d.d):d.d;
   return `<button class="card" style="border-color:${d.c};box-shadow:0 0 14px ${d.c}" onclick="pickLv('${k}','${id}')"><div class="ic" style="color:${d.c};text-shadow:0 0 14px ${d.c}">${d.ic}</div><div class="nm">${d.n}</div><div class="lv ${cur?'':'new'}">${cur?`Ур. ${cur} → ${cur+1}`:(k==='w'?'НОВОЕ ОРУЖИЕ':'НОВЫЙ ПРЕДМЕТ')}</div><div class="ds">${ds}</div></button>`}).join('')+`</div><p style="font-size:12px">Оружие ${P.weps.length}/6 · Предметы ${Object.keys(P.pas).length}/6</p></div>`}
@@ -339,10 +352,11 @@ function draw(now){
  // screen space
  ctx.setTransform(1,0,0,1,0,0);ctx.globalCompositeOperation='lighter';ctx.strokeStyle='rgba(0,240,255,.18)';ctx.lineWidth=1;ctx.beginPath();
  for(const r of rain||[]){ctx.moveTo(r.x,r.y);ctx.lineTo(r.x-r.l*.25,r.y+r.l)}ctx.stroke();ctx.globalCompositeOperation='source-over';
- ctx.drawImage(vig,0,0);
+ if(W>0&&H>0)ctx.drawImage(vig,0,0);
  if(flash){ctx.fillStyle=hexA(flash.c,.35*flash.l/flash.ml);ctx.fillRect(0,0,W,H)}
- if(state!=='menu'&&state!=='dying')hud(t);
- if(state==='dying')drawDeathScreen()}
+ if(state!=='menu'&&state!=='dying'&&state!=='victory')hud(t);
+ if(state==='dying')drawDeathScreen();
+ if(state==='victory')drawVictoryScreen()}
 function hud(t){
  const k=xp/need(),g=ctx.createLinearGradient(0,0,W,0);g.addColorStop(0,'#00f0ff');g.addColorStop(1,'#ff2bd6');
  ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillRect(0,0,W,10);ctx.fillStyle=g;ctx.fillRect(0,0,W*k,10);ctx.fillStyle='rgba(255,255,255,.5)';ctx.fillRect(W*k-2,0,2,10);
@@ -368,7 +382,7 @@ function hud(t){
 let last=performance.now();
 function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;
  if(rain)for(const r of rain){r.y+=r.s*dt;r.x-=r.s*.25*dt;if(r.y>H){r.y=-20;r.x=Math.random()*(W+200)}}
- if(state==='play')update(dt);else if(state==='dying')deathUpdate(dt);draw(now);requestAnimationFrame(loop)}
+ if(state==='play')update(dt);else if(state==='dying')deathUpdate(dt);else if(state==='victory')victoryUpdate(dt);draw(now);requestAnimationFrame(loop)}
 function menu(){state='menu';rain=Array.from({length:110},()=>({x:Math.random()*W,y:Math.random()*H,s:300+Math.random()*400,l:8+Math.random()*18}));
  const b=+localStorage.getItem('neonsurv_best')||0;
  ui.innerHTML=`<div class="panel"><h1>NEON SURVIVORS</h1><p>Мегаполис захвачен вирусным роем. Продержись <b style="color:#ffe600">15 минут</b>.<br>Оружие стреляет само - ты только двигаешься (WASD / стрелки). Esc - пауза.<br>Собирай кристаллы опыта, выбирай улучшения, круши боссов и открывай кейсы.</p>
