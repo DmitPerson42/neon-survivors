@@ -173,9 +173,8 @@ function update(dt){
  if(spawnT<=0&&enemies.length<target){spawnT=Math.max(.06,.55-T/500);for(let i=0;i<1+Math.floor(T/100);i++)spawnE(pickType())}
  if(T>=nextElite){nextElite+=60;spawnE('elite');banner('ЭЛИТНЫЙ ВРАГ: НЕСЁТ КЕЙС','#ff8c00')}
  if(T>=nextSwarm){nextSwarm+=90;const R=Math.min(W,H)*.55;for(let i=0;i<36;i++){const a=i/36*TAU;spawnE(T>200?'runner':'drone',P.x+Math.cos(a)*R,P.y+Math.sin(a)*R)}banner('РОЙ ОКРУЖАЕТ!','#ff2bd6')}
- if(T>=nextBoss&&T<840){nextBoss+=300;spawnE('boss');banner('⚠ БОСС: ЯДРО-СТРАЖ ⚠','#ff2a6d');flash={c:'#ff2a6d',l:.5,ml:.5}}
- if(T>=840&&!finalBoss){finalBoss=1;spawnE('arch');banner('⚠ ФИНАЛЬНЫЙ БОСС: АРХИТЕКТОР СЕТИ ⚠','#ff0055');flash={c:'#ff0055',l:.8,ml:.8};shake=15}
- if(T>=900&&!enemies.some(e=>e.final))return startVictory();
+ if(T>=nextBoss&&T<900){nextBoss+=300;spawnE('boss');banner('⚠ БОСС: ЯДРО-СТРАЖ ⚠','#ff2a6d');flash={c:'#ff2a6d',l:.5,ml:.5}}
+ if(T>=900&&!finalBoss){finalBoss=1;spawnE('arch');banner('⚠ ФИНАЛЬНЫЙ БОСС: АРХИТЕКТОР СЕТИ ⚠','#ff0055');flash={c:'#ff0055',l:.8,ml:.8};shake=15}
  // enemies + separation grid
  const grid=new Map();
  for(const e of enemies){const k=(Math.floor(e.x/36)*7919+Math.floor(e.y/36));let c=grid.get(k);if(!c)grid.set(k,c=[]);c.push(e)}
