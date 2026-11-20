@@ -104,7 +104,7 @@ const EN={
  spitter:{r:12,hp:22,spd:58,dmg:8,c:'#ff9f1c',xp:3,n:4,shoot:2.2},
  elite:{r:24,hp:320,spd:62,dmg:18,c:'#ff4d00',xp:25,n:8,chest:1},
  boss:{r:52,hp:3500,spd:52,dmg:30,c:'#ff003c',xp:100,n:10,shoot:.7,chest:3,boss:1},
- arch:{r:68,hp:18000,spd:58,dmg:35,c:'#ff0055',xp:500,n:12,shoot:.45,boss:1,final:1}
+ arch:{r:68,hp:3500,spd:58,dmg:35,c:'#ff0055',xp:500,n:12,shoot:.45,boss:1,final:1}
 };
 
 // ---------- state ----------
@@ -128,7 +128,7 @@ function nearest(x,y,R,skip,nth=0){let best=null,bd=R*R;const cand=[];
  for(const e of enemies){if(e.dead||(skip&&skip.has(e)))continue;const d=(e.x-x)**2+(e.y-y)**2;if(d<bd){if(nth){cand.push([d,e])}else{bd=d;best=e}}}
  if(nth){cand.sort((a,b)=>a[0]-b[0]);return(cand[nth]||cand[0]||[])[1]||null}return best}
 function shoot(x,y,a,sp,o){proj.push(Object.assign({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,sp,pierce:1,rehit:1e9,hit:new Map(),c:o.w?WP[o.w.k].c:'#fff'},o))}
-function part(x,y,vx,vy,l,c,s){if(parts.length<1800)parts.push({x,y,vx,vy,l,ml:l,c,s})}
+function part(x,y,vx,vy,l,c,s){if(parts.length<900)parts.push({x,y,vx,vy,l,ml:l,c,s})}
 function burst(x,y,c,n,sp){for(let i=0;i<n;i++){const a=Math.random()*TAU,s=Math.random()*sp;part(x,y,Math.cos(a)*s,Math.sin(a)*s,.3+Math.random()*.5,c,2+Math.random()*3)}}
 function text(x,y,v,c,big){if(texts.length>140&&!big)return;texts.push({x:x+rnd(8),y,v,c,l:.8,big})}
 function banner(t,c){banners.push({t,c,l:3})}
@@ -169,7 +169,7 @@ function update(dt){
  cam.x+=(P.x-cam.x)*Math.min(1,dt*8);cam.y+=(P.y-cam.y)*Math.min(1,dt*8);
  for(const w of P.weps){const d=WP[w.k];if(d.tick)d.tick(w,dt);else{w.t-=dt;if(w.t<=0){w.t=d.cd(w.lv)*S.cd;d.fire(w)}}}
  // spawning
- spawnT-=dt;const target=Math.min(380,14+T*.75);
+ spawnT-=dt;const hasFinal=enemies.some(e=>e.final);const target=hasFinal?120:Math.min(260,14+T*.6);
  if(spawnT<=0&&enemies.length<target){spawnT=Math.max(.06,.55-T/500);for(let i=0;i<1+Math.floor(T/100);i++)spawnE(pickType())}
  if(T>=nextElite){nextElite+=60;spawnE('elite');banner('ЭЛИТНЫЙ ВРАГ: НЕСЁТ КЕЙС','#ff8c00')}
  if(T>=nextSwarm){nextSwarm+=90;const R=Math.min(W,H)*.55;for(let i=0;i<36;i++){const a=i/36*TAU;spawnE(T>200?'runner':'drone',P.x+Math.cos(a)*R,P.y+Math.sin(a)*R)}banner('РОЙ ОКРУЖАЕТ!','#ff2bd6')}
